@@ -15,17 +15,8 @@ if sys.hexversion >= 0x03000000:
 else:
     import thread
 
-# colors for drawing different bodies 
-SKELETON_COLORS = [pygame.color.THECOLORS["red"], 
-                  pygame.color.THECOLORS["blue"], 
-                  pygame.color.THECOLORS["green"], 
-                  pygame.color.THECOLORS["orange"], 
-                  pygame.color.THECOLORS["purple"], 
-                  pygame.color.THECOLORS["yellow"], 
-                  pygame.color.THECOLORS["violet"]]
 
-
-class MimicRuntime(SceneBase):
+class TrackingRuntime(SceneBase):
     def __init__(self):
         pygame.init()
         SceneBase.__init__(self)
@@ -43,8 +34,6 @@ class MimicRuntime(SceneBase):
         # Loop until the user clicks the close button.
         self._done = False
 
-        # Used to manage how fast the screen updates
-        self._clock = pygame.time.Clock()
 
         # Kinect runtime object, we want only color and body frames 
         self._kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Color | PyKinectV2.FrameSourceTypes_Body)
@@ -62,90 +51,28 @@ class MimicRuntime(SceneBase):
 
         #use screenWidth and screenHeight in the SceneBase functions that are being overwritten
         (self.screenWidth, self.screenHeight) = pygame.display.get_surface().get_size()
+        print(self.screenWidth, self.screenHeight)
         self.initialDistance = 0
         self.distance = 0
-        #*******************************************
+        #****************************************
 
-
-
-
-
-    def draw_body_bone(self, joints, jointPoints, color, joint0, joint1):
-        joint0State = joints[joint0].TrackingState;
-        joint1State = joints[joint1].TrackingState;
-
-        # both joints are not tracked
-        if (joint0State == PyKinectV2.TrackingState_NotTracked) or (joint1State == PyKinectV2.TrackingState_NotTracked): 
-            return
-
-        # both joints are not *really* tracked
-        if (joint0State == PyKinectV2.TrackingState_Inferred) and (joint1State == PyKinectV2.TrackingState_Inferred):
-            return
-
-        # ok, at least one is good 
-        start = (jointPoints[joint0].x, jointPoints[joint0].y)
-        end = (jointPoints[joint1].x, jointPoints[joint1].y)
-
-        
-        try:
-            pygame.draw.line(self._frame_surface, color, start, end, 8)
-        except: # need to catch it due to possible invalid positions (with inf)
-            pass
-
-
-
-    def draw_body(self, joints, jointPoints, color):
-        # Torso
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_Head, PyKinectV2.JointType_Neck);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_Neck, PyKinectV2.JointType_SpineShoulder);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_SpineMid);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineMid, PyKinectV2.JointType_SpineBase);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_ShoulderRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_ShoulderLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineBase, PyKinectV2.JointType_HipRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineBase, PyKinectV2.JointType_HipLeft);
-    
-        # Right Arm    
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ShoulderRight, PyKinectV2.JointType_ElbowRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ElbowRight, PyKinectV2.JointType_WristRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristRight, PyKinectV2.JointType_HandRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_HandRight, PyKinectV2.JointType_HandTipRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristRight, PyKinectV2.JointType_ThumbRight);
-      
-
-        # Left Arm
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ShoulderLeft, PyKinectV2.JointType_ElbowLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ElbowLeft, PyKinectV2.JointType_WristLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristLeft, PyKinectV2.JointType_HandLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_HandLeft, PyKinectV2.JointType_HandTipLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristLeft, PyKinectV2.JointType_ThumbLeft);
-      
-   
-        # Right Leg
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_HipRight, PyKinectV2.JointType_KneeRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_KneeRight, PyKinectV2.JointType_AnkleRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_AnkleRight, PyKinectV2.JointType_FootRight);
-      
-        # Left Leg
-        #self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_HipLeft, PyKinectV2.JointType_KneeLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_KneeLeft, PyKinectV2.JointType_AnkleLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_AnkleLeft, PyKinectV2.JointType_FootLeft);
-        
 
 
     #*********************************
     #this function draws circles at the locations of the hands --> going to be used later as indicators of 
     #menu selection and stuff
 
-    def drawCirclesOnHands(self, joints, jointPoints, color, joint0, joint1):
-        joint0State = joints[joint0].TrackingState
+
+    #replace with robot hands eventually when implementing same functionality in the startScreen
+    def drawCirclesOnHands(self, joints, jointPoints, color, joint1):
+     
         joint1State = joints[joint1].TrackingState
 
-        #start and end points for drawing lines
-        start = (jointPoints[joint0].x, jointPoints[joint0].y)
         end = (int(jointPoints[joint1].x), int(jointPoints[joint1].y))
 
         pygame.draw.circle(self._frame_surface, color, end, 40)
+
+
     #*******************************************************************************************************
 
 
@@ -156,8 +83,9 @@ class MimicRuntime(SceneBase):
         ctypes.memmove(address, frame.ctypes.data, frame.size)
         del address
         target_surface.unlock()
-
         
+
+
        
     def run(self):
         # -------- Main Program Loop -----------
@@ -172,6 +100,9 @@ class MimicRuntime(SceneBase):
                     self._screen = pygame.display.set_mode(event.dict['size'], 
                                                pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
                     
+
+           
+
             # --- Game logic should go here
 
             # --- Getting frames and drawing  
@@ -224,18 +155,16 @@ class MimicRuntime(SceneBase):
                     joint_points = self._kinect.body_joints_to_color_space(joints)
 
                     
-                    self.draw_body(joints, joint_points, SKELETON_COLORS[i])
+                    #self.draw_body(joints, joint_points, SKELETON_COLORS[i])
 
-                    self.drawCirclesOnHands(joints, joint_points, (0,0,255), PyKinectV2.JointType_WristRight, PyKinectV2.JointType_HandRight)
+                    self.drawCirclesOnHands(joints, joint_points, (0,0,255), PyKinectV2.JointType_HandRight)
 
-                    self.drawCirclesOnHands(joints, joint_points, (0,0,255), PyKinectV2.JointType_WristLeft, PyKinectV2.JointType_HandLeft)
-
-
-                    
+                    self.drawCirclesOnHands(joints, joint_points, (0,0,255),  PyKinectV2.JointType_HandLeft)
                     
 
-                    #Sebastian's Code 
+                    #************************************************* 
                     ##hand states are enumerated --> 3 is closed
+                    #MOVE THIS TO TRACKING MODE WHEN FINSIHED WITH THIS FILE
                     if body.hand_right_state == 3:
                  
                         font = pygame.font.SysFont("comicsansms", 72)
@@ -247,9 +176,6 @@ class MimicRuntime(SceneBase):
                         font = pygame.font.SysFont("comicsansms", 72)
                         text = font.render("The left hand was closed", True, (0, 128, 0))
                         self._frame_surface.blit(text,(100,200))
-
-
-
                     #*******************************************************************
          
 
@@ -278,6 +204,6 @@ class MimicRuntime(SceneBase):
 
 
 
-game = MimicRuntime();
+game = TrackingRuntime();
 game.run();
 

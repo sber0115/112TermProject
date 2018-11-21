@@ -6,7 +6,7 @@ class SceneBase:
     def __init__(self):
         self.next = self
     
-    def ProcessInput(self, events, pressed_keys):
+    def ProcessInput(self):
         print("uh-oh, you didn't override this in the child class")
 
     def Update(self):
@@ -34,8 +34,6 @@ def run_game(width, height, fps, starting_scene):
 
         #implement code here that checks to see if the x and y for the hands
         #correspond or is within the distance of the button on the startScreen
-
-
         """pressed_keys = pygame.key.get_pressed()
         
         # Event filtering 
