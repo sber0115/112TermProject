@@ -2,6 +2,8 @@ from pykinect2 import PyKinectV2
 from pykinect2.PyKinectV2 import *
 from pykinect2 import PyKinectRuntime
 from sceneManager import SceneBase
+import serialStuff
+
 
 import ctypes
 import _ctypes
@@ -138,12 +140,23 @@ class TrackingRuntime(SceneBase):
                     #in the z position can occur even while standing still
                     if .02 < self.distance - self.initialDistance < .06:
                         font = pygame.font.SysFont("comicsansms", 72)
+
+
+                        serialStuff.moveBackward()
+
+
                         text = font.render("Moving backward", True, (0, 128, 0))
                         self._frame_surface.blit(text,(600,200))
                      
 
                     elif -.06 < self.distance - self.initialDistance < -.02:
                         font = pygame.font.SysFont("comicsansms", 72)
+
+                        #arduino command to move forward depending on distance traveled 
+                        #the delay is set in the serialStuff method
+                        serialStuff.moveForward()
+
+
                         text = font.render("Moving forward", True, (0, 128, 0))
                         self._frame_surface.blit(text,(600,200))
 
