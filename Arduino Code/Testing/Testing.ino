@@ -55,22 +55,32 @@ void loop()
     }
 
     
-    /*else if (state == 'a')
+    else if (state == 'a')
     {
+        Serial.print("Turning left");
+       
 
-        //motor on the upper right
-        m3.run(FORWARD);
+        m1.run(FORWARD);
+        m4.run(FORWARD);
+        m2.run(BACKWARD);
+        m3.run(BACKWARD);
         
-        delay(200);
+        delay(400);
+        
+   
     }
+    
     else if (state == 'd')
     {
 
-        //motor on the upper left
-  
-        m4.run(FORWARD);
-        delay(200);
-    }*/
+        m2.run(FORWARD);
+        m3.run(FORWARD);
+        m1.run(BACKWARD);
+        m4.run(BACKWARD);
+        
+        
+        delay(400);
+    }
     
     else
     {

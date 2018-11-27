@@ -1,8 +1,15 @@
 from pykinect2 import PyKinectV2
 from pykinect2.PyKinectV2 import *
 from pykinect2 import PyKinectRuntime
-from sceneManager import SceneBase
-import serialStuff
+
+#import serialStuff
+
+
+
+
+
+#have the text sprites and the robot hand sprites in the same surface
+#that way there isn't any conflict between the coordinates of each 
 
 
 import ctypes
@@ -18,10 +25,9 @@ else:
     import thread
 
 
-class TrackingRuntime(SceneBase):
+class TrackingRuntime:
     def __init__(self):
         pygame.init()
-        SceneBase.__init__(self)
 
         pygame.display.set_caption('Robo Dance Club')
 
@@ -68,9 +74,11 @@ class TrackingRuntime(SceneBase):
     #replace with robot hands eventually when implementing same functionality in the startScreen
     def drawCirclesOnHands(self, joints, jointPoints, color, joint1):
      
-        joint1State = joints[joint1].TrackingState
+        
 
         end = (int(jointPoints[joint1].x), int(jointPoints[joint1].y))
+
+        print(end)
 
         pygame.draw.circle(self._frame_surface, color, end, 40)
 
@@ -142,7 +150,7 @@ class TrackingRuntime(SceneBase):
                         font = pygame.font.SysFont("comicsansms", 72)
 
 
-                        serialStuff.moveBackward()
+                        #serialStuff.moveBackward()
 
 
                         text = font.render("Moving backward", True, (0, 128, 0))
@@ -154,7 +162,7 @@ class TrackingRuntime(SceneBase):
 
                         #arduino command to move forward depending on distance traveled 
                         #the delay is set in the serialStuff method
-                        serialStuff.moveForward()
+                        #serialStuff.moveForward()
 
 
                         text = font.render("Moving forward", True, (0, 128, 0))
@@ -182,12 +190,14 @@ class TrackingRuntime(SceneBase):
                  
                         font = pygame.font.SysFont("comicsansms", 72)
                         text = font.render("The right hand was closed", True, (0, 128, 0))
+                        #serialStuff.turnRight()
                         self._frame_surface.blit(text,(600,200))
 
                     if body.hand_left_state == 3:
                  
                         font = pygame.font.SysFont("comicsansms", 72)
                         text = font.render("The left hand was closed", True, (0, 128, 0))
+                        #serialStuff.turnLeft()
                         self._frame_surface.blit(text,(100,200))
                     #*******************************************************************
          
