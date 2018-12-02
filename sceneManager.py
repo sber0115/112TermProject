@@ -32,9 +32,8 @@ def run_game(width, height, fps, starting_scene):
 
     while active_scene != None:
 
-        #implement code here that checks to see if the x and y for the hands
-        #correspond or is within the distance of the button on the startScreen
-        """pressed_keys = pygame.key.get_pressed()
+       
+        pressed_keys = pygame.key.get_pressed()
         
         # Event filtering 
         filtered_events = []
@@ -61,7 +60,7 @@ def run_game(width, height, fps, starting_scene):
         active_scene.ProcessInput(filtered_events, pressed_keys)
         active_scene.Update()
         active_scene.Render(screen)
-        """
+       
 
 
         active_scene = active_scene.next

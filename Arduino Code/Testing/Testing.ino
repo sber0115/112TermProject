@@ -38,8 +38,9 @@ void loop()
         m2.run(FORWARD);
         m3.run(FORWARD);
         m4.run(FORWARD);
-       
-        delay(200);
+
+        //this delay corresponds to about 1 meter forward or backward 
+        delay(1200);
         
     }
     else if (state == 's')
@@ -58,14 +59,15 @@ void loop()
     else if (state == 'a')
     {
         Serial.print("Turning left");
-       
 
-        m1.run(FORWARD);
-        m4.run(FORWARD);
-        m2.run(BACKWARD);
-        m3.run(BACKWARD);
+
+        m2.run(FORWARD);
+        m3.run(FORWARD);
+        m1.run(BACKWARD);
+        m4.run(BACKWARD);
+
         
-        delay(400);
+        delay(280);
         
    
     }
@@ -73,13 +75,14 @@ void loop()
     else if (state == 'd')
     {
 
-        m2.run(FORWARD);
-        m3.run(FORWARD);
-        m1.run(BACKWARD);
-        m4.run(BACKWARD);
+        m1.run(FORWARD);
+        m4.run(FORWARD);
+        m2.run(BACKWARD);
+        m3.run(BACKWARD);
         
         
-        delay(400);
+        
+        delay(280);
     }
     
     else

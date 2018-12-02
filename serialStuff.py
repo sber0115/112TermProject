@@ -1,7 +1,7 @@
 import serial
 
 
-arduinoSerialData = serial.Serial('com20',9600)
+arduinoSerialData = serial.Serial('COM20',9600)
 
 
 def moveForward():
@@ -25,9 +25,11 @@ def turnRight():
 def turnLeft():
     arduinoSerialData.write("a".encode())
     arduinoSerialData.write("y".encode())
+
+
+def testing():
+    arduinoSerialData.write("<11300>".encode())
+
+testing()
     
-
-
-
-
 
