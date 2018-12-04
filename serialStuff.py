@@ -27,9 +27,9 @@ def turnLeft():
     arduinoSerialData.write("y".encode())
 
 
-def testing():
-    arduinoSerialData.write("<11300>".encode())
+def testing(sentString):
+    arduinoSerialData.write(sentString.encode())
 
-testing()
+
     
 
