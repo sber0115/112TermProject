@@ -6,6 +6,8 @@ AF_DCMotor m2(2); //motor on lower right
 AF_DCMotor m3(3); //motor on upper right
 AF_DCMotor m4(4); //motor on upper left
 
+
+//character array that stores this many characters
 const byte numChars = 32;
 char receivedChars[numChars];
 
@@ -18,15 +20,28 @@ boolean newData = false;
 void setup() {
     Serial.begin(9600);
     Serial.println("<Arduino is ready>");
+
+    m1.setSpeed(255);
+    m2.setSpeed(255);
+    m3.setSpeed(255);
+    m4.setSpeed(255);
 }
 
 void loop() {
+
+    //the move motors is executed inside the showNewData function only when
+    //there actually is newData aka there was a string like this <01100> that was long
+    //enough to splice the delay from 
+  
     recvWithStartEndMarkers();
     showNewData();
   
     
 }
 
+
+///when the arduino is sent a string with ending and starting markers "<hello>"
+//this function only gets what's between the markers
 void recvWithStartEndMarkers() {
     static boolean recvInProgress = false;
     static byte ndx = 0;
@@ -63,7 +78,13 @@ void recvWithStartEndMarkers() {
 }
 
 
+////i want to move the motors according to a delay specified within the sent string
+// for example the last three characters of <01300> correspond to a 300ms delay for the motors
 
+//i just basiccaly splice the string again and save the delay as an int
+//move the motors forward for that much delay
+
+//***********************************all the code works but when the motor stuff i executed all the motors do is buzz
 
 void moveMotors(){
   Serial.print("moving the motors");
@@ -73,30 +94,51 @@ void moveMotors(){
   char delayArray[totalNum];
   int delayIndex = 0;
 
-  
+  String receivedString(receivedChars);
+
   
   for (int index = 2; index < strlen(receivedChars); index++){
     delayArray[delayIndex] = receivedChars[index];
     delayIndex ++;
     }
 
-  Serial.print("got through for loop");
-
   String delayAsString(delayArray);
   int receivedDelay = delayAsString.toInt();
   
-  
-  Serial.print("Moving forward with a delay of ");
-  Serial.print(receivedDelay);
 
+  if (receivedString[0] == '1'){
+    Serial.println("got left side");
+    m1.run(FORWARD);
+    m4.run(FORWARD);
+    
+    }
+
+  else{
+    m1.run(BACKWARD);
+    m4.run(BACKWARD);
+    }
+
+  if (receivedString[1] == '1'){
+    Serial.println("got right side");
+    
+    m2.run(FORWARD);
+    m3.run(FORWARD);
+   
+    }
+
+  else{
+
+    m2.run(BACKWARD);
+    m3.run(BACKWARD);
+    
+    }
   
-  m1.run(FORWARD);
-  Serial.print(" actually ran");
-  /*m2.run(FORWARD);
-  m3.run(FORWARD);
-  m4.run(FORWARD);
-  */
   delay(receivedDelay);
+
+  m1.run(RELEASE);
+  m2.run(RELEASE);
+  m3.run(RELEASE);
+  m4.run(RELEASE);
   
   }
 
