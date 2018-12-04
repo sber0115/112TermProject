@@ -22,42 +22,128 @@ class mirrorModeRuntime(trackingRuntime):
     def __init__(self):
         pygame.init()
         super().__init__()
+
+
+        #used in condtionals for movement handling
+        #change them whenever certain commands are executed
+
+        #first element to check whether turned and 
+        #the string specifies the direction turned in
+        self.userTurned = [False, ""]
+        self.robotTurned = [False, ""]
         
 
+        #used to track changes in position
         (self.initialZ, self.currentZ) = (0,0)
         (self.initialX, self.currentX) = (0,0)
      
-        (self.zBarrier, self.withinZBarrier) = (0.03, False)
-        (self.xBarrier, self.withinXBarrier) = (0.03, False)
-      
+
+        #average change in position and boolen for whether or not player had already started moving
+        (self.barrier, self.withinBarrier) = (0.03, False)
+        
+         
+        #to keep track of the movement's duration 
         (self.startMove, self.endMove) = (0,0)
+
 
         self.moveDuration = 0
 
 
+        #build up the string and when it needs to be sent to the arduino
+        #then add the start and end markers 
+        self.commandString = ""
 
-    def movementHandling(self, initialVal, currentVal, barrier):
-        if math.isclose(abs(self.initialZ - self.currentZ), self.zBarrier, rel_tol = .5):
-                        
-            if self.initialZ - self.currentZ > 0:
-                serialStuff.moveForward()
+
+
+    def rotationHandling():
+        pass 
+
+
+
+
+
+    def movementHandling(self, initialVal, currentVal, userRotated):
+        direction = None
+
+        #this is about the average change in distance from sensor 
+        #that elicits movement forward and backward
+        if math.isclose(abs(initialVal - currentVal), self.barrier, rel_tol = .5):
+                 
+            if initialVal - currentVal > 0:
+                #all motors going to be going forward in arduino code
+                direction = "backward"
+               
             else:
-                serialStuff.moveBackward()
+                #all motors going to be going backward in arduino code
+                direction = "forward"
+                
 
+            #detecting the start of some movement aka when user in within some movement "speed"
             if self.startMove == 0:
-                self.withinZBarrier = True
+             
+                self.withinBarrier = True
                 self.startMove = time.time()
                            
         else:
 
-            if math.isclose(abs(self.initialZ - self.currentZ), .001, rel_tol = .10) and self.withinZBarrier:
+            #if the user is still after having started moving
+            if math.isclose(abs(initialVal - currentVal), .001, rel_tol = .10) and self.withinBarrier:
                             
                 self.endMove = time.time()
 
-                self.withinZBarrier = False
+                if direction == "forward":
+                    self.commandString += "11"
+                else:
+                    self.commandString += "00"
+
+                timeToReturn = self.endMove - self.startMove
+
+                self.withinBarrier = False
                 self.startMove = 0
-                
-                return 
+
+                #return the duration of the move
+                return timeToReturn
+
+
+
+    def sendCommand(self):
+
+        #what I found to be the average time to walk/travel one meter
+        #away or toward the sensor
+        meterDuration = 2.387
+
+        #an arduino delay equivalent to travel one meter
+        #is about 1200 ms aka 1.2s
+
+
+        #distance arduino should travel some ratio of this delay regardless if 
+        #user traveled more an a meter or not
+        travelRatio = self.moveDuration / meterDuration
+
+        if travelRatio > 1:
+            leftOver = self.moveDuration - meterDuration
+            travelRatio = 1 + (leftOver / meterDuration)
+
+        motorDelay = 1200 * travelRatio
+
+        self.commandString += str(int(motorDelay))
+
+        #inserting the start and end markers in the command string
+        self.commandString = "<" + self.commandString
+        self.commandString += ">"
+
+
+
+        print("String that got sent", self.commandString)
+        serialStuff.testing(self.commandString)
+
+
+        #reset commandString after movements
+        self.commandString = ""
+
+
+
+
                             
        
     def run(self):
@@ -106,19 +192,19 @@ class mirrorModeRuntime(trackingRuntime):
 
                     rotation = super().calculateRotation(vectorComponents)
 
-                    print("this is the angle", rotation)
+                    """print("this is the angle", rotation)
 
                     if -1 <= rotation <= 10:
                         print("looking straight ahead")
 
                     elif 40 <= rotation <= 65:
-                        serialStuff.turnRight()
+                        #serialStuff.turnRight()
                         print("facing right")
 
                     elif -75 <= rotation <= -40:
-                        serialStuff.turnLeft()
+                        #serialStuff.turnLeft()
                         print("facing left")
-
+                        """
 
 
                     #************************************************************
@@ -131,10 +217,14 @@ class mirrorModeRuntime(trackingRuntime):
                     joint_points = self._kinect.body_joints_to_color_space(joints)
 
 
-                    self.moveDuration = movementHandling()
+                    self.moveDuration = self.movementHandling(self.initialZ, self.currentZ)
+
 
                     if self.moveDuration != None:
-                        pass
+
+                        print("duration was", self.moveDuration)
+                        self.sendCommand()
+
                         #execute the robot movement here
 
 
@@ -148,7 +238,7 @@ class mirrorModeRuntime(trackingRuntime):
             ##updating the distance attributes
             self.initialZ = self.currentZ
             self.initialX  = self.currentX
-            self.currentY = self.currentY
+            
 
 
             pygame.display.update()
