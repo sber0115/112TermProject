@@ -1,8 +1,10 @@
 from pykinect2 import PyKinectV2
 from pykinect2.PyKinectV2 import *
 from pykinect2 import PyKinectRuntime
-from sceneManager import SceneBase
-from trackScreen4 import trackingRuntime
+
+from trackingInit import *
+
+
 
 
 import ctypes, _ctypes, pygame, sys, math
@@ -48,7 +50,6 @@ class MenuButton(pygame.sprite.Sprite):
         self.rectHeight = 0
         self.rectWidth = 0
 
-    
         #initializing whiteSpace variable and will be used to add 
         #appropriate white space for rendering
         vWhiteSpace = 0
@@ -61,7 +62,6 @@ class MenuButton(pygame.sprite.Sprite):
             if textWidth > self.rectWidth:
                 self.rectWidth = textWidth
 
-                #total rect height is 
             self.rectHeight += textHeight
 
             textPosition = (cx - textWidth/2, cy - textHeight + vWhiteSpace)
@@ -70,13 +70,7 @@ class MenuButton(pygame.sprite.Sprite):
 
             vWhiteSpace = textHeight
 
-        
-        
         self.image = pygame.Surface((self.rectWidth, self.rectHeight), pygame.SRCALPHA, 32)
-
-
-
-        self.image.fill((0,0,255))
 
 
         self.rect = self.image.get_rect()
@@ -105,10 +99,9 @@ class Hand(pygame.sprite.Sprite):
         
         self.rect = self.image.get_rect()
 
-        (self.rect.x, self.rect.y) = (int(jointPoints[jointPart].x * (1/2) - self.image.get_width()/2), int(jointPoints[jointPart].y * (1/2) - self.image.get_height()/2))
+        (self.rect.x, self.rect.y) = (int(jointPoints[jointPart].x * (1/2) - self.image.get_width()/2), \
+                                        int(jointPoints[jointPart].y * (1/2) - self.image.get_height()/2))
 
-
-        self.image.fill((0,0,255))
 
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -119,7 +112,8 @@ class Hand(pygame.sprite.Sprite):
            
 
     def draw(self, frameSurface):
-        
+        #need to keep track of appropriate rect so it's rendered with twice the rect 
+        #so it actually lines up
         frameSurface.blit(self.image, (self.rect.x * 2, self.rect.y * 2))
         
 
@@ -127,57 +121,70 @@ class Hand(pygame.sprite.Sprite):
     #use sprite/group attributes here to appropriately 
     #check for collision and stuff
     #the hands are a member of body so have to pass it in
-    def detectCollision(self, menuButtonSprites, body):
+    def detectSelection(self, menuButtonSprites, body):
+        handToCheck = None
 
-        #need it to return the sprite that is being collided with
-        if body.hand_right_state == 3:
-           print("right hand was closed")
-
-
-        if len(pygame.sprite.spritecollide(self, menuButtonSprites, False, pygame.sprite.collide_mask)) != 0 and  body.hand_left_state == 3:
-            print("Hand cors", self.rect.x, self.rect.y)
-            print("Hand was closed and menu item was collided with")
+        if self.jointPart == PyKinectV2.JointType_HandRight:
+            handToCheck = body.hand_right_state
+        else:
+            handToCheck = body.hand_left_state
 
 
-
+        for button in menuButtonSprites:
+            if pygame.sprite.collide_rect(self, button) and handToCheck == 3:
+                print("hand closing worked")
+                return (True, button.optionText)
+                
 
 
 
 class startScreenRuntime(trackingRuntime):
     def __init__(self):
         pygame.init()
+
         super().__init__()
+        
+
+        #menu background onto the screen
+        self.background = pygame.image.load("assets/menu.png")
+
+        self.hand = pygame.image.load("assets/robotHand.png")
+      
+       
+        self.background = pygame.transform.scale(self.background,(960,540)).convert_alpha()
+
+        self.buttonsGroup = pygame.sprite.Group()
 
         
+        #just rendering buttons in the appropriate locations
+        self.buttonsGroup.add(MenuButton("Miror\nMode", self.background, self.screenWidth/4, self.screenHeight/4,\
+                                                                    self.screenWidth/2, self.screenHeight/2))
+        self.buttonsGroup.add(MenuButton("Party\nMode", self.background, self.screenWidth*(3/4), self.screenHeight/4,\
+                                                                     self.screenWidth/2, self.screenHeight/2))
+        self.buttonsGroup.add(MenuButton("Path\nMode", self.background, self.screenWidth/4, self.screenHeight*(3/4), \
+                                                                     self.screenWidth/2, self.screenHeight/2))
+        self.buttonsGroup.add(MenuButton("Mimic\nMode", self.background, self.screenWidth*(3/4), \
+                                            self.screenHeight*(3/4), self.screenWidth/2, self.screenHeight/2))
+
+
+        self.hasToChange = False
+        self.screenChange = ""
+
+
+           
+    def changeScreen(self):
+        print("gets to command")
+        if self.screenChange == "Path\nMode":
+            print("got the correct string")
+
+        
+        
+
        
     def run(self):
         # -------- Main Program Loop -----------
-        while not self._done:
+        while not self._done and not self.hasToChange:
 
-
-            handGroup = pygame.sprite.Group()
-            
-            buttonsGroup = pygame.sprite.Group()
-
-            mirrorButton = MenuButton("Miror\nMode", self.background, self.screenWidth/4, self.screenHeight/4, self.screenWidth/2, self.screenHeight/2)
-            partyButton = MenuButton("Party\nMode", self.background, self.screenWidth*(3/4), self.screenHeight/4, self.screenWidth/2, self.screenHeight/2)
-            pathButton = MenuButton("Path\nMode", self.background, self.screenWidth/4, self.screenHeight*(3/4), self.screenWidth/2, self.screenHeight/2)
-            mimicButton = MenuButton("Mimic\nMode", self.background, self.screenWidth*(3/4), self.screenHeight*(3/4), self.screenWidth/2, self.screenHeight/2)
-
-         
-
-            buttonsGroup.add(mirrorButton)
-            buttonsGroup.add(partyButton)
-            buttonsGroup.add(pathButton)
-            buttonsGroup.add(mimicButton)
-
-            """buttonsGroup.add(MenuButton("Miror\nMode", self.background, self.screenWidth/4, self.screenHeight/4, self.screenWidth/2, self.screenHeight/2))
-            buttonsGroup.add(MenuButton("Party\nMode", self.background, self.screenWidth*(3/4), self.screenHeight/4, self.screenWidth/2, self.screenHeight/2))
-            buttonsGroup.add(MenuButton("Path\nMode", self.background, self.screenWidth/4, self.screenHeight*(3/4), self.screenWidth/2, self.screenHeight/2))
-            buttonsGroup.add(MenuButton("Mimic\nMode", self.background, self.screenWidth*(3/4), self.screenHeight*(3/4), self.screenWidth/2, self.screenHeight/2))
-            """
-
-        
             # --- Main event loop
             for event in pygame.event.get(): # User did something
                 if event.type == pygame.QUIT: # If user clicked close
@@ -191,6 +198,9 @@ class startScreenRuntime(trackingRuntime):
 
 
             if self._bodies is not None:
+
+
+                self.handGroup = pygame.sprite.Group()
                
              
                 for i in range(0, self._kinect.max_body_count):
@@ -207,29 +217,20 @@ class startScreenRuntime(trackingRuntime):
                     joint_points = self._kinect.body_joints_to_color_space(joints)
                      
                   
-                    #if hand is detected then just render both
+                    #render both hands if body is detected
+                    self.handGroup.add(Hand(joints, joint_points, PyKinectV2.JointType_HandRight, self.hand))
+                    self.handGroup.add(Hand(joints, joint_points, PyKinectV2.JointType_HandLeft, self.hand))
 
-                    
-                    handGroup.add(Hand(joints, joint_points, PyKinectV2.JointType_HandRight, self.hand))
-                    handGroup.add(Hand(joints, joint_points, PyKinectV2.JointType_HandLeft, self.hand))
 
-                    for hand in handGroup:
+                    for hand in self.handGroup:
                         hand.draw(self._frame_surface)
 
-                        
-                        for button in buttonsGroup:
-                            if pygame.sprite.collide_rect(hand, button) and hand.jointPart == PyKinectV2.JointType_HandLeft:
-                                print("The right hand collided with the ", button.optionText)
+                        detection = hand.detectSelection(self.buttonsGroup, body)
+  
+                        if detection != None:
+                            (self.hasToChange, self.screenChange) = detection 
 
 
-                        """if pygame.sprite.spritecollide(hand, buttonsGroup, pygame.sprite.collide_rect_ratio(.5)) != 0 and hand.jointPart == PyKinectV2.JointType_HandRight and body.hand_right_state == 3:
-                            print("the right hand was closed when colliding with a button")"""
-
-                       
-
-                     
-                    
-            
             self._screen.blit(self.background,(0,0))
 
             
@@ -246,9 +247,7 @@ class startScreenRuntime(trackingRuntime):
             
 
 
-            #this clears the renders the hand every frame --> the fourth parameter is the opacity/alpha
-            #which is set to 1 to hide the previous frame
-
+            #this essentially clears the surface
             self._frame_surface.fill((100,100,100,1))
 
 
@@ -261,12 +260,14 @@ class startScreenRuntime(trackingRuntime):
             # --- Limit to 60 frames per second
             self._clock.tick(60)
 
+        print("gets to the outside")
+        if self.hasToChange:
+            self.changeScreen()
+
         # Close our Kinect sensor, close the window and quit.
         self._kinect.close()
         pygame.quit()
 
 
-
-game = startScreenRuntime();
-game.run();
-
+game = startScreenRuntime()
+game.run()

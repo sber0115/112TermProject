@@ -1,4 +1,3 @@
-# The first half is just boiler-plate stuff... 
 
 import pygame
 

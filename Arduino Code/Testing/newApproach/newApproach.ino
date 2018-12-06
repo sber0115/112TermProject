@@ -7,6 +7,9 @@ AF_DCMotor m3(3); //motor on upper right
 AF_DCMotor m4(4); //motor on upper left
 
 
+//m1 and m4 left side
+//m2 and m3 the right side
+
 //character array that stores this many characters
 const byte numChars = 32;
 char receivedChars[numChars];
@@ -106,33 +109,48 @@ void moveMotors(){
   int receivedDelay = delayAsString.toInt();
   
 
-  if (receivedString[0] == '1'){
-    Serial.println("got left side");
+
+  //all motors move forward --> car goes straight ahead
+  if (receivedString[0] == '1' and receivedString[1] == '1'){
     m1.run(FORWARD);
+    m2.run(FORWARD);
+    m3.run(FORWARD);
     m4.run(FORWARD);
     
     }
 
-  else{
+
+  //all motors move backward
+  else if (receivedString[0] == '0' and receivedString[1] == '0'){
     m1.run(BACKWARD);
+    m2.run(BACKWARD);
+    m3.run(BACKWARD);
     m4.run(BACKWARD);
-    }
-
-  if (receivedString[1] == '1'){
-    Serial.println("got right side");
     
-    m2.run(FORWARD);
-    m3.run(FORWARD);
-   
     }
-
-  else{
-
+    
+  else if (receivedString[0] == '1' and receivedString[1] == '0'){
+    m1.run(FORWARD);
+    m4.run(FORWARD);
     m2.run(BACKWARD);
     m3.run(BACKWARD);
     
+    
     }
+
+    
+  else {
+    
+    m2.run(FORWARD);
+    m3.run(FORWARD);
+    m1.run(BACKWARD);
+    m4.run(BACKWARD);
+    
+    
+    }
+
   
+  Serial.println(receivedDelay);
   delay(receivedDelay);
 
   m1.run(RELEASE);

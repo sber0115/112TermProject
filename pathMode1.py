@@ -1,12 +1,10 @@
-#####copied code from the start screen --> this updating scheme can be used for the drawing path stuff
-#to keep the drawn path on the screen --> don't reset the surface with the drawn circles on it at the end
-#of the long while loop
+import serial
+from trackingInit import *
 
-from pykinect2 import PyKinectV2
-from pykinect2.PyKinectV2 import *
-from pykinect2 import PyKinectRuntime
-from sceneManager import SceneBase
-from trackScreen4 import trackingRuntime
+
+
+arduinoSerialData = serial.Serial('COM20',9600)
+
 
 
 
@@ -19,51 +17,234 @@ else:
     import thread
 
 
+class Robot():
+
+    def __init__(self):
+        self.commandString = ""
+        
+        self.tolerableRange = 80
 
 
-class startScreenRuntime(trackingRuntime):
+ 
+
+    def move(self, start, end):
+        print("getting to the move")
+
+        #250 pixels equal to one meter change in robot's position
+        #if the user draws a path that's less than or greater then
+        #this then it'll move for some ratio of it
+
+        pixelEquivalent = 450
+
+
+        changeInX = start[0] - end[0]
+        changeInY = start[1] - end[1]
+
+
+        #this is going to make the robot move forward or back
+        if abs(changeInX) <= self.tolerableRange:
+
+            print("within range")
+
+            movementRatio = abs(changeInY) / pixelEquivalent
+
+            if movementRatio > 1:
+                leftOver = abs(changeInY) - pixelEquivalent
+                movementRatio = 1 + (leftOver / pixelEquivalent)
+
+            #corresponds to one meter robot movement
+            motorDelay = 1200 * movementRatio
+
+            if changeInY > 0:
+                print("command string set")
+
+                self.commandString = "<11" + str(int(motorDelay)) + ">"
+
+                print("this is the command string", self.commandString)
+                self.executeCommand()
+
+            else:
+                self.commandString = "<00" + str(int(motorDelay)) + ">"
+                self.executeCommand()
+
+
+        elif abs(changeInY) <= self.tolerableRange:
+           
+
+            movementRatio = abs(changeInX) / pixelEquivalent
+
+            if movementRatio > 1:
+                leftOver = abs(changeInX) - pixelEquivalent
+                movementRatio = 1 + (leftOver / pixelEquivalent)
+
+            #corresponds to one meter robot movement
+            motorDelay = 1200 * movementRatio
+
+            if changeInX < 0:
+                self.executeRotation("right")
+                print("turned right")
+
+            else:
+                self.executeRotation("left")
+
+
+            self.commandString = "<11" + str(int(motorDelay)) + ">"
+
+            print("this is the command string", self.commandString)
+            self.executeCommand()
+
+          
+
+        """else:
+            self.calculateRotation()
+            self.executeRotation()"""
+        
+
+    def executeRotation(self, rotationDirection):
+   
+        if rotationDirection == "right":
+            self.commandString += "<10350>"
+        else:
+            self.commandString += "<01350>"
+
+        self.executeCommand()
+
+
+    #this is only called when an appropriate command string
+    #has been created
+    def executeCommand(self):
+        arduinoSerialData.write(self.commandString.encode())
+        #reset commandString after movements
+        self.commandString = ""
+
+
+
+
+
+
+
+class pathModeRuntime(trackingRuntime):
     def __init__(self):
         pygame.init()
         super().__init__()
 
 
+        #reset the canvas when the user either specifies to reset or
+        #when the user closes the left hand --> clear screen
+        self.reset = False
+
+        #coordinates of hands
+        self.righHandCors = (0,0)
+
+        self.leftHandCors = (0,0)
+
+
+
         #surface to be drawn on for path mode
         self.pathScreen = pygame.Surface((self.screenWidth, self.screenHeight), pygame.SRCALPHA, 32)
+
+        self.textSurface = pygame.Surface((self.screenWidth, self.screenHeight), pygame.SRCALPHA, 32)
+
+        self.font = pygame.font.SysFont("assets/Arkitech_Bold.ttf", 40)
+
+        self.instructionsText = "Close right hand to start drawing path\nthen"\
+                               + " close the left hand to see robot move"
+
+        self.otherText = "To exit mode bring hands together"
+
+        vWhiteSpace = 0
+        heightMultiplier = 0
+
+
+        if not self.reset:
+
+            for subLine in self.instructionsText.splitlines():
+                text = self.font.render(subLine, True, (0,0,0))
+                (textWidth, textHeight) = text.get_size()
+
+                textPosition = (self.screenWidth/2 - textWidth/2, self.screenHeight/3 - textHeight + vWhiteSpace)
+                startingPosition = textPosition
+
+                self.textSurface.blit(text, textPosition)
+
+                heightMultiplier += 1
+                vWhiteSpace = textHeight * heightMultiplier
+        
+
+            vWhiteSpace = 0
+
+            for subLine in self.otherText.splitlines():
+                text = self.font.render(subLine, True, (0,0,0))
+                (textWidth, textHeight) = text.get_size()
+
+                textPosition = (self.screenWidth/2 - textWidth/2, self.screenHeight * \
+                                                                    (3/4) + vWhiteSpace)
+
+                print(textPosition)
+                self.textSurface.blit(text, textPosition)
+
+                vWhiteSpace = textHeight
+
+
+
         self.pathScreen.fill((255,255,255))
 
+        self.initialModeStart = False
 
-    def drawCirclesOnHands(self, joints, jointPoints, color, jointPart, body):
+        #store x and y coordinates of right hand once path drawing starts 
+        self.pathStart = []
 
-        print("should be drawn")
-        end = (int(jointPoints[jointPart].x / 2), int(jointPoints[jointPart].y / 2))
+        self.pathEnd = []
 
-        pygame.draw.circle(self.pathScreen, color, end, 25)
-   
+        self.pathStarted = False
 
 
-    def draw_color_frame(self, frame, target_surface):
-        target_surface.lock()
-        address = self._kinect.surface_as_array(target_surface.get_buffer())
-        ctypes.memmove(address, frame.ctypes.data, frame.size)
-        del address
-        target_surface.unlock()
+
+    #other is robot instance
+    def pathHandling(self, joints, jointPoints, color, rightHand, leftHand, body, other):
+       self.rightHandCors = [int(jointPoints[rightHand].x / 2), int(jointPoints[rightHand].y / 2)]
+
+       if body.hand_right_state == 3:
+            if not self.initialModeStart:
+                self.initialModeStart = not self.initialModeStart
+
+            if not self.pathStarted:
+                self.pathStarted = not self.pathStarted
+                self.pathStart = self.rightHandCors
+                print("path started at", self.pathStart)
+            
+            self.pathEnd = self.rightHandCors
+            pygame.draw.circle(self.pathScreen, color, self.rightHandCors, 10)
+
+
+       if body.hand_left_state == 3:
+            if self.pathStarted:
+                other.move(self.pathStart, self.pathEnd)
+                print("the ending coordinate was", self.pathEnd)
+                self.reset = True
+                self.pathStarted = False
+
 
 
        
     def run(self):
+
+        robot = Robot()
+
+
         # -------- Main Program Loop -----------
         while not self._done:
+
+            if self.reset:
+                self.pathScreen.fill((255,255,255))
+                self.reset = False
+
         
             # --- Main event loop
             for event in pygame.event.get(): # User did something
                 if event.type == pygame.QUIT: # If user clicked close
                     self._done = True # Flag that we are done so we exit this loop
-            
- 
-            if self._kinect.has_new_color_frame():
-                            frame = self._kinect.get_last_color_frame()
-                            self.draw_color_frame(frame, self._frame_surface)
-                            frame = None
+   
 
             # --- Cool! We have a body frame, so can get skeletons
             if self._kinect.has_new_body_frame(): 
@@ -84,26 +265,16 @@ class startScreenRuntime(trackingRuntime):
                      
 
                     #draw with right hand and use left hand to signal end of line
-                    if body.hand_right_state == 3:
-                        self.drawCirclesOnHands(joints,joint_points,(0,0,255), PyKinectV2.JointType_HandRight, body)
+                    
+                    self.pathHandling(joints, joint_points, (0,0,255), PyKinectV2.JointType_HandRight, \
+                                                                        PyKinectV2.JointType_HandLeft, body, robot)
  
-
-
-
-            h_to_w = float(self._frame_surface.get_height()) / self._frame_surface.get_width()
-            target_height = int(h_to_w * self._screen.get_width())
-            surface_to_draw = pygame.transform.scale(self._frame_surface, (self._screen.get_width(), target_height));
-
-
-            #self._screen.blit(surface_to_draw, (0,0))
-
-
+           
             self._screen.blit(self.pathScreen,(0,0))
 
 
-            
-            surface_to_draw = None
-      
+            if not self.initialModeStart:
+                self._screen.blit(self.textSurface,(0,0))
 
 
             pygame.display.update()
@@ -120,7 +291,5 @@ class startScreenRuntime(trackingRuntime):
 
 
 
-game = startScreenRuntime();
-game.run();
-
-
+game = pathModeRuntime()
+game.run()
