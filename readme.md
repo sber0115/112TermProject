@@ -1,4 +1,4 @@
-#Motion Controlled Car
+# Motion Controlled Car
 
 # Project Description:
 
@@ -10,7 +10,7 @@ Unfortunately I wasn't able to get mode transitions working; pretty sure the pro
 
 You can run each "screen" individually by just executing the mode files like "startScreen" and "pathMode". "MirrorMode" works as well.  
 
-[![Youtube Video Thumbnail](https://img.youtube.com/vi/x6Naf4uirCo.jpg)](https://www.youtube.com/watch?v=x6Naf4uirCo)
+[![Youtube Video Thumbnail](https://img.youtube.com/vi/x6Naf4uirCo/0.jpg)](https://www.youtube.com/watch?v=x6Naf4uirCo)
 
 # Libraries that need to be installed:
 pyserial
